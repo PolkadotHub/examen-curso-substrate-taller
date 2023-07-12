@@ -20,9 +20,10 @@ use tipos::*;
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
-	use super::*;
-	use frame_support::{pallet_prelude::*, Blake2_128Concat};
-	use frame_system::pallet_prelude::*;
+
+use super::*;
+	use frame_support::{pallet_prelude::*, sp_runtime::Saturating, Blake2_128Concat};
+	use frame_system::{pallet_prelude::*};
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
@@ -40,17 +41,19 @@ pub mod pallet {
 		type LargoMaximoNombreProyecto: Get<u32>;
 
 		type Currency: Currency<Self::AccountId>; // Pueden no utilizarlo.
+
 	}
 
 	#[pallet::storage]
+	#[pallet::getter(fn proyectos)]
 	pub type Proyectos<T> =
 		StorageMap<_, Blake2_128Concat, BoundedString<T>, BalanceDe<T>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		ProyectoCreado { quien: T::AccountId, nombre: NombreProyecto<T> },
-		ProyectoApoyado { nombre: NombreProyecto<T>, cantidad: BalanceDe<T> },
+		ProyectoCreado { quien: T::AccountId, proyecto_tanjiro: NombreProyecto<T> },
+		ProyectoApoyado { proyecto_tanjiro: NombreProyecto<T>, cantidad: BalanceDe<T> },
 	}
 
 	#[pallet::error]
@@ -68,7 +71,28 @@ pub mod pallet {
 		/// Crea un proyecto.
 		pub fn crear_proyecto(origen: OriginFor<T>, nombre: String) -> DispatchResult {
 			// Completar este método.
-			todo!()
+			
+			let nombre_decoded: String = nombre.clone().try_into().unwrap();
+
+			print!("lingitud {}", nombre_decoded.len());
+
+			if nombre_decoded.len() <= 2 {
+				ensure!(false, Error::<T>::NombreMuyCorto);
+			} else if nombre_decoded.len() >= 33 {
+				ensure!(false, Error::<T>::NombreMuyLargo);
+			}
+
+			let quien = ensure_signed(origen)?;
+			let nombre_acotado: NombreProyecto<T> = nombre.clone().try_into().unwrap();
+			let proyecto_tanjiro: BoundedString<T> = nombre_acotado;
+
+			let balance_tanjiro: BalanceDe<T> = T::Currency::total_balance(&quien) - T::Currency::total_balance(&quien); //free_balance(&quien);//.saturating_sub(T::Currency::minimum_balance());
+
+			Proyectos::<T>::insert(&proyecto_tanjiro, balance_tanjiro);
+			
+			Self::deposit_event(Event::ProyectoCreado { quien, proyecto_tanjiro });
+
+			Ok(())
 		}
 
 		pub fn apoyar_proyecto(
@@ -77,7 +101,30 @@ pub mod pallet {
 			cantidad: BalanceDe<T>,
 		) -> DispatchResult {
 			// Completar este método.
-			todo!()
+
+			let nombre_acotado: NombreProyecto<T> = nombre.clone().try_into().unwrap();
+			let proyecto_tanjiro: BoundedString<T> = nombre_acotado;
+/* 
+			let balance_actual = Proyectos::<T>::get(&proyecto_tanjiro);
+
+			let balance_tanjiro = balance_actual + cantidad;
+			Proyectos::<T>::insert(&proyecto_tanjiro, balance_tanjiro);
+*/
+			
+			let balance_actual = match <Proyectos<T>>::try_get(&proyecto_tanjiro) {
+				Ok(mi_balance) => mi_balance,
+				Err(e) => ensure!(true, Error::<T>::ProyectoNoExiste),
+			};
+
+			let balance_tanjiro = balance_actual + cantidad;
+			Proyectos::<T>::insert(&proyecto_tanjiro, balance_tanjiro);
+
+			Self::deposit_event(Event::ProyectoApoyado { proyecto_tanjiro, cantidad});
+
+			Ok(())
+
 		}
+
 	}
+
 }
