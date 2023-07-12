@@ -104,13 +104,13 @@ use super::*;
 
 			let nombre_acotado: NombreProyecto<T> = nombre.clone().try_into().unwrap();
 			let proyecto_tanjiro: BoundedString<T> = nombre_acotado;
-/* 
+ 
 			let balance_actual = Proyectos::<T>::get(&proyecto_tanjiro);
 
 			let balance_tanjiro = balance_actual + cantidad;
 			Proyectos::<T>::insert(&proyecto_tanjiro, balance_tanjiro);
-*/
-			
+
+			/* 
 			let balance_actual = match <Proyectos<T>>::try_get(&proyecto_tanjiro) {
 				Ok(mi_balance) => mi_balance,
 				Err(e) => ensure!(true, Error::<T>::ProyectoNoExiste),
@@ -118,6 +118,7 @@ use super::*;
 
 			let balance_tanjiro = balance_actual + cantidad;
 			Proyectos::<T>::insert(&proyecto_tanjiro, balance_tanjiro);
+			*/
 
 			Self::deposit_event(Event::ProyectoApoyado { proyecto_tanjiro, cantidad});
 
